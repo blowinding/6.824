@@ -73,8 +73,11 @@ rm -f mr-*
 (cd .. && go build $RACE mrsequential.go) || exit 1
 
 failed_any=0
-
+export LOG_LEVEL="ERROR"
 #########################################################
+rm -rf ../../../log/mr
+mkdir -p ../../../log/mr
+export TASK="wc"
 # first word-count
 
 # generate the correct output
@@ -113,7 +116,12 @@ fi
 # wait for remaining workers and coordinator to exit.
 wait
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
+
 #########################################################
+export TASK="indexer"
 # now indexer
 rm -f mr-*
 
@@ -143,7 +151,12 @@ fi
 
 wait
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
+
 #########################################################
+export TASK="map_parallelism"
 echo '***' Starting map parallelism test.
 
 rm -f mr-*
@@ -173,8 +186,12 @@ fi
 
 wait
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
 
 #########################################################
+export TASK="reduce_parallelism"
 echo '***' Starting reduce parallelism test.
 
 rm -f mr-*
@@ -197,7 +214,12 @@ fi
 
 wait
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
+
 #########################################################
+export TASK="job_count"
 echo '***' Starting job count test.
 
 rm -f mr-*
@@ -222,7 +244,12 @@ fi
 
 wait
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
+
 #########################################################
+export TASK="early_exit"
 # test whether any worker or coordinator exits before the
 # task has completed (i.e., all output files have been finalized)
 rm -f mr-*
@@ -280,7 +307,12 @@ else
 fi
 rm -f mr-*
 
+if [ $failed_any -eq 1 ]; then
+    exit 1
+fi
+
 #########################################################
+export TASK="crash"
 echo '***' Starting crash test.
 
 # generate the correct output
@@ -327,6 +359,10 @@ else
   echo '---' crash output is not the same as mr-correct-crash.txt
   echo '---' crash test: FAIL
   failed_any=1
+fi
+
+if [ $failed_any -eq 1 ]; then
+    exit 1
 fi
 
 #########################################################
