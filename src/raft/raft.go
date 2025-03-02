@@ -19,7 +19,7 @@ package raft
 
 import (
 	//	"bytes"
-	"fmt"
+	// "fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -72,11 +72,13 @@ type LogEntry struct {
 }
 
 func (rf *Raft) println(v ...interface{}) {
-	if rf.mode {
-		state := []string{"FOLLOWER", "CANDIDATE", "LEADER"}
-		l := fmt.Sprintf("[me:%d] [term:%d] [state:%s]", rf.me, rf.currentTerm, state[rf.state])
-		rf.rfLogger.Println(l, v)
-	}
+	// rf.mu.Lock()
+	// defer rf.mu.Unlock()
+	// if rf.mode {
+	// 	state := []string{"FOLLOWER", "CANDIDATE", "LEADER"}
+	// 	l := fmt.Sprintf("[me:%d] [term:%d] [state:%s]", rf.me, rf.currentTerm, state[rf.state])
+	// 	rf.rfLogger.Println(l, v)
+	// }
 }
 
 // A Go object implementing a single Raft peer.
@@ -121,8 +123,9 @@ func (rf *Raft) GetState() (int, bool) {
 	var term int32
 	var isleader bool
 	// Your code here (3A).
-
-	term = atomic.LoadInt32(&rf.currentTerm)
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	term = rf.currentTerm
 	isleader = atomic.LoadInt32(&rf.state) == LEADER
 
 	return int(term), isleader
@@ -318,7 +321,7 @@ func (rf *Raft) sendRequestVote(args RequestVoteArgs) bool {
 	for voteCount+1 <= (len(rf.peers)-1)/2 && recvCount < len(rf.peers)-1 && atomic.LoadInt32(&rf.state) == CANDIDATE {
 		cond.Wait()
 	}
-	reqMu.Unlock()
+	defer reqMu.Unlock()
 	return voteCount+1 > (len(rf.peers)-1)/2
 }
 
@@ -533,7 +536,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		log.Fatal("file open error")
 	}
 	rf.rfLogger = log.New(logFile, "raft:", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
-	rf.mode = true
+	rf.mode = false
 	rf.println("----------------start-------------------")
 
 	// initialize from state persisted before a crash
